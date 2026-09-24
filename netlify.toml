@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Sviluppo locale: `npx netlify dev` avvia Next.js sulla 3111 e lo espone sulla 3101 (la porta
+# storica del progetto), aggiungendo il Postgres di prova (PGlite) con NETLIFY_DB_URL già
+# impostata e le migrazioni di netlify/database/migrations/ applicate — vedi README.
+[dev]
+  command = "npx next dev -p 3111"
+  targetPort = 3111
+  port = 3101

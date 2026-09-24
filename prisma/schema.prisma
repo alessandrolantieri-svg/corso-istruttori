@@ -1,0 +1,148 @@
+// La Chiave Giusta — piattaforma multi-percorso.
+// Nomi generici di proposito (Learner, non Instructor; Organization, non School):
+// il nuoto è il primo percorso ospitato, non un vincolo dell'architettura — vedi D23 in
+// 01_ANALISI/DECISIONI PRESE.md.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- TENANCY (opzionale — D23 punto 2) ----------
+
+model Organization {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  createdAt DateTime   @default(now())
+  learners  Learner[]
+}
+
+model Learner {
+  id             String        @id @default(cuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  email          String        @unique
+  passwordHash   String
+  name           String
+  createdAt      DateTime      @default(now())
+
+  sessions         Session[]
+  initialProfiles  InitialProfile[]
+  progress         ProgressState[]
+  assessmentAnswers AssessmentResponse[]
+  reflections      FreeReflection[]
+  tutorMessages    TutorMessage[]
+
+  @@index([organizationId])
+}
+
+// ---------- SESSIONE (fatta in casa: token opaco + hash in DB) ----------
+
+model Session {
+  id        String   @id @default(cuid())
+  learnerId String
+  learner   Learner  @relation(fields: [learnerId], references: [id])
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([learnerId])
+}
+
+// ---------- PROFILO INIZIALE — generico: il VAK è la versione del percorso nuoto,
+// un percorso futuro potrebbe avere un profilo iniziale diverso ----------
+
+model InitialProfile {
+  id         String   @id @default(cuid())
+  learnerId  String
+  learner    Learner  @relation(fields: [learnerId], references: [id])
+  pathId     String   // slug, es. "comunicazione-nuoto"
+  courseId   String   // slug, es. "metodo-v1"
+  kind       String   // es. "vak" — discrimina la forma di "values" per percorsi futuri
+  values     Json     // es. {"mostra":4,"dire":1,"sentire":1,"prevalente":"mostra"}
+  rawAnswers Json     // risposte grezze che hanno prodotto il profilo — audit, mai ricalcolate da qui
+  computedAt DateTime @default(now())
+
+  @@unique([learnerId, pathId, courseId]) // garantisce "calcolato una sola volta"
+}
+
+// ---------- ORCHESTRAZIONE — solo "dove sono", nessun dato sensibile ----------
+
+model ProgressState {
+  id          String    @id @default(cuid())
+  learnerId   String
+  learner     Learner   @relation(fields: [learnerId], references: [id])
+  pathId      String
+  courseId    String
+  chapterId   String    // slug, es. "capitolo-1"
+  currentStep Int       @default(0)
+  completedAt DateTime?
+  startedAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([learnerId, pathId, courseId, chapterId])
+}
+
+// ---------- SPAZIO CERTIFICAZIONE — risposte chiuse, valutabili (Muro 1) ----------
+
+model AssessmentResponse {
+  id         String   @id @default(cuid())
+  learnerId  String
+  learner    Learner  @relation(fields: [learnerId], references: [id])
+  pathId     String
+  courseId   String
+  chapterId  String
+  key        String   // es. "q1", "c1", "v1".."v6", "cv"
+  value      String
+  isCorrect  Boolean?
+  // FASE 8 (specifica voice-first, Tutor mode): risposta autonoma o aiutata — vero solo se il
+  // Tutor IA è stato consultato dopo l'apertura di questo capitolo, prima di questa risposta.
+  // Segnale calcolato lato client (src/lib/tutor/clientSignal.ts): sa SOLO "quando" il Tutor è
+  // stato usato l'ultima volta, mai "cosa" è stato scritto — Muro 1 resta intatto, questo campo
+  // non nasce da una lettura di TutorMessage.
+  tutorAssisted Boolean?
+  answeredAt DateTime @default(now())
+
+  @@unique([learnerId, pathId, courseId, chapterId, key])
+  @@index([learnerId, pathId, courseId, chapterId])
+}
+
+// ---------- SPAZIO MENTORING — riflessioni libere, MAI lette da Certificazione (Muro 1) ----------
+
+model FreeReflection {
+  id        String   @id @default(cuid())
+  learnerId String
+  learner   Learner  @relation(fields: [learnerId], references: [id])
+  pathId    String
+  courseId  String
+  chapterId String
+  key       String   // es. "q2", "q7", "q8a", "q8b"
+  text      String
+  writtenAt DateTime @default(now())
+
+  @@unique([learnerId, pathId, courseId, chapterId, key])
+  @@index([learnerId, pathId, courseId, chapterId])
+}
+
+// ---------- SPAZIO MENTORING — conversazioni con l'agente Tutor, MAI lette da Certificazione
+// (Muro 1, FASE 4 §3: "non arriva mai... il testo delle conversazioni con il Tutor"). Tabella a
+// sé, non FreeReflection: una conversazione ha turni con un ruolo (chi parla), un capitolo non è
+// sempre il contesto giusto — chapterId manca di proposito, il legame è solo learner+percorso. ----------
+
+model TutorMessage {
+  id        String   @id @default(cuid())
+  learnerId String
+  learner   Learner  @relation(fields: [learnerId], references: [id])
+  pathId    String
+  courseId  String
+  role      String   // "user" | "assistant"
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([learnerId, pathId, courseId, createdAt])
+}

@@ -1,0 +1,1277 @@
+/* "Bold playful sobrio" — stessi nomi di classe e variabili delle redesign precedenti,
+   valori nuovi secondo DESIGN-REFERENCE.md. Nessun componente deve cambiare per via di
+   questo file da solo; le classi aggiunte in coda (dashboard: tab/tessere/righe) sono
+   nuove, non toccano i valori esistenti. */
+
+:root {
+  --ink: #12333f;
+  --ink-soft: #5b7480;
+  --paper: #eff3f5;
+  --paper-raise: #ffffff;
+  --deep: #004e68;
+  --deep-ink: #ffffff;
+  --surface: #006990;
+  --foam: #e6f2f6;
+  --foam-line: color-mix(in srgb, var(--surface) 14%, #fff);
+  --flag: #d9890b;
+  --flag-tint: color-mix(in srgb, var(--flag) 8%, #fff);
+  --eccellenza: #e5b800;
+  --eccellenza-tint: color-mix(in srgb, var(--eccellenza) 14%, #fff);
+  --good: #1e9e5a;
+  --rule: color-mix(in srgb, var(--ink) 14%, transparent);
+  --lastra: #0f4f66;
+
+  --c-accent: #e8631a;
+  --c-teal: #1a9aa8;
+  --c-amber: #d9890b;
+  --c-sun: #e5b800;
+  --c-red: #d23c3c;
+  --c-navy: #2f5fa8;
+
+  --serif: var(--font-serif), "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --sans: var(--font-sans), "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --mono: var(--font-sans), "Manrope", -apple-system, sans-serif;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #eaf1f6;
+    --ink-soft: #9cb4c2;
+    --paper: #0b1b23;
+    --paper-raise: #12262f;
+    --deep: #3fa6ce;
+    --deep-ink: #0b1b23;
+    --surface: #3fa6ce;
+    --foam: #16303c;
+    --foam-line: color-mix(in srgb, var(--surface) 20%, var(--paper-raise));
+    --flag: #e3a748;
+    --flag-tint: color-mix(in srgb, var(--flag) 16%, var(--paper-raise));
+    --eccellenza: #e5c158;
+    --eccellenza-tint: color-mix(in srgb, var(--eccellenza) 16%, var(--paper-raise));
+    --good: #34c77e;
+    --rule: color-mix(in srgb, var(--ink) 20%, transparent);
+    --lastra: #03151d;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --ink: #eaf1f6;
+  --ink-soft: #9cb4c2;
+  --paper: #0b1b23;
+  --paper-raise: #12262f;
+  --deep: #3fa6ce;
+  --deep-ink: #0b1b23;
+  --surface: #3fa6ce;
+  --foam: #16303c;
+  --foam-line: color-mix(in srgb, var(--surface) 20%, var(--paper-raise));
+  --flag: #e3a748;
+  --flag-tint: color-mix(in srgb, var(--flag) 16%, var(--paper-raise));
+  --eccellenza: #e5c158;
+  --eccellenza-tint: color-mix(in srgb, var(--eccellenza) 16%, var(--paper-raise));
+  --good: #34c77e;
+  --rule: color-mix(in srgb, var(--ink) 20%, transparent);
+  --lastra: #03151d;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+h1,
+h2,
+h3 {
+  font-family: var(--serif);
+  font-weight: 800;
+  text-wrap: balance;
+  margin: 0;
+  color: var(--ink);
+}
+p {
+  margin: 0 0 1em;
+  max-width: 65ch;
+}
+strong {
+  font-weight: 700;
+}
+button {
+  font: inherit;
+  cursor: pointer;
+}
+textarea,
+input {
+  font: inherit;
+}
+/* Anello doppio (bianco + ink) invece di un solo colore piatto: un contorno a tinta unica
+   sparisce quando il controllo è già su sfondo dello stesso colore (es. i bottoni della
+   testata colorata) — l'anello doppio resta visibile su qualunque sfondo, chiaro o scuro. */
+:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 1px;
+  box-shadow: 0 0 0 5px var(--ink);
+  border-radius: 4px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+i.ph-duotone,
+i[class*=" ph-"],
+i[class^="ph-"] {
+  vertical-align: -0.125em;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.pressable {
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.pressable:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--lastra);
+}
+
+.app {
+  max-width: 440px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- testata (topbar di ogni capitolo/esame/caso reale) --- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 14px 0;
+  padding: 14px 16px;
+  position: sticky;
+  top: 8px;
+  z-index: 20;
+  background: var(--section, var(--surface));
+  color: #fff;
+  border: 2.5px solid var(--ink);
+  border-radius: 22px;
+  box-shadow: 0 4px 0 var(--lastra);
+}
+.wordmark {
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+.topbar-progress {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-left: 6px;
+}
+.topbar-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.week-tag {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+.prog-track {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.prog-fill {
+  height: 100%;
+  background: #fff;
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+.day-tag {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.topbar .day-tag,
+.dash-head .day-tag {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.stage {
+  flex: 1;
+  padding: 14px 14px 110px;
+  animation: fadeIn 0.32s ease both;
+}
+/* Riceve il focus via JS a ogni cambio passo (ChapterRunner, FASE 2) solo per chi naviga da
+   tastiera o con uno screen reader — non è un elemento su cui si clicca. L'anello di :focus-visible
+   ci sarebbe comunque anche per un focus dato da script, disegnando un riquadro enorme intorno a
+   tutto il passo: tolto qui, resta invariato su bottoni/link/campi veri. */
+.stage:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+.eyebrow {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--section, var(--surface));
+  margin-bottom: 10px;
+}
+.stage h1 {
+  font-size: 1.4rem;
+  margin-bottom: 10px;
+}
+.stage h2 {
+  font-size: 1.1rem;
+  margin: 22px 0 10px;
+}
+.lede {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* --- card --- */
+.card {
+  background: #fff;
+  border: 2.5px solid var(--ink);
+  border-radius: 20px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  box-shadow: 0 4px 0 var(--lastra);
+}
+/* I primi tre riquadri della Dashboard (consiglio del giorno, capitolo corrente, "Il tuo
+   assistente") mescolavano .card (bordo 2.5px, raggio 20px) e .row (bordo 2px, raggio 16px) —
+   due scale diverse una sopra l'altra. Questa classe li allinea alla stessa scala compatta,
+   senza toccare .card/.row che restano come sono ovunque altrove nell'app. Selettore composto
+   (.card.top-panel/.row.top-panel), non solo .top-panel da solo: a parità di specificità con
+   .card/.row, vince chi è scritto dopo nel foglio di stile — qui serve vincere sempre, non
+   dipendere dall'ordine.  */
+.card.top-panel,
+.row.top-panel {
+  border-width: 2px;
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: 0 3px 0 var(--lastra);
+}
+.card.quote {
+  border: 1px solid color-mix(in srgb, var(--surface) 35%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 5%, #fff);
+  box-shadow: none;
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--ink);
+}
+.card.scene .who {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--section, var(--surface));
+  margin-bottom: 8px;
+}
+.card.warn {
+  border: 2px solid var(--flag);
+  background: var(--flag-tint);
+  box-shadow: none;
+  font-weight: 600;
+}
+.table-wrap {
+  overflow-x: auto;
+}
+table.cause,
+table.fasce {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+  margin: 10px 0;
+}
+table.cause th,
+table.fasce th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+  padding: 6px 8px 6px 0;
+  border-bottom: 1.5px solid var(--rule);
+}
+table.cause td,
+table.fasce td {
+  padding: 9px 8px 9px 0;
+  border-bottom: 1.5px solid var(--rule);
+  vertical-align: top;
+}
+table.cause td:first-child {
+  font-weight: 800;
+  white-space: nowrap;
+}
+table.fasce td:first-child {
+  font-weight: 800;
+  color: var(--section, var(--surface));
+  white-space: nowrap;
+}
+
+.prompt {
+  font-weight: 800;
+  font-size: 0.96rem;
+  margin: 16px 0 10px;
+  color: var(--ink);
+}
+.opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  cursor: pointer;
+  background: #fff;
+  box-shadow: 0 3px 0 var(--lastra);
+  transition: transform 0.1s, box-shadow 0.1s, opacity 0.15s;
+}
+.opt:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--lastra);
+}
+.opt input {
+  margin-top: 3px;
+  accent-color: var(--surface);
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+.opt span {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+.opt.picked:not(.correct):not(.wrong) {
+  border-color: var(--section, var(--surface));
+  background: color-mix(in srgb, var(--section, var(--surface)) 8%, #fff);
+}
+.opt.correct {
+  background: color-mix(in srgb, var(--good) 12%, #fff);
+  border-color: var(--good);
+}
+.opt.correct span {
+  font-weight: 800;
+}
+.opt.wrong {
+  box-shadow: none;
+  opacity: 0.55;
+  transform: none;
+}
+
+textarea.field,
+input.field {
+  width: 100%;
+  min-height: 76px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 500;
+  resize: vertical;
+  transition: box-shadow 0.15s;
+}
+input.field {
+  min-height: unset;
+}
+textarea.field:focus,
+input.field:focus {
+  outline: 2px solid var(--surface);
+  outline-offset: 2px;
+}
+
+.feedback {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border: 1.5px solid transparent;
+}
+.feedback.ok {
+  background: color-mix(in srgb, var(--good) 10%, #fff);
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--good) 35%, transparent);
+}
+.feedback.retry {
+  background: color-mix(in srgb, var(--surface) 6%, #fff);
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--surface) 25%, transparent);
+}
+
+/* --- controlli voce (FASE 3 voice-first/accessibility-first) --- */
+.voice-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 0;
+}
+/* Griglia a colonne uguali, stesso trattamento delle schede "I tuoi 10 capitoli/Esame
+   finale/..." in Dashboard (.tabs/.tab) — Ascolta, microfono e Velocità devono avere tutti la
+   stessa dimensione, non tre forme/larghezze diverse come prima (difetto segnalato dal
+   proprietario). --voice-columns è calcolato in VoiceControls.tsx dal numero di bottoni presenti
+   in quel momento (cambia con lo stato: Ascolta da solo, oppure Pausa+Stop, ecc.). */
+.voice-controls-actions {
+  display: grid;
+  grid-template-columns: repeat(var(--voice-columns, 3), 1fr);
+  gap: 8px;
+}
+.voice-control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  padding: 10px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: #fff;
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--ink-soft);
+  box-shadow: 0 3px 0 var(--lastra);
+}
+.voice-speed-dropdown {
+  position: relative;
+  display: flex;
+}
+.voice-speed-dropdown > .voice-control-btn {
+  flex: 1;
+}
+.voice-speed-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 96px;
+  background: var(--bg, #fff);
+  border: 1.5px solid color-mix(in srgb, var(--surface) 25%, transparent);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+}
+.voice-speed-menu .chip.voice-speed-option {
+  min-height: unset;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 7px 10px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+.voice-speed-menu .chip.voice-speed-option[aria-selected="true"] {
+  background: var(--section, var(--surface));
+  color: #fff;
+}
+
+/* --- profilo VAK --- */
+.bars {
+  background: color-mix(in srgb, var(--surface) 5%, #fff);
+  border: 1px solid color-mix(in srgb, var(--surface) 35%, transparent);
+  border-radius: 20px;
+  padding: 14px 16px;
+  margin: 14px 0;
+}
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+.bar-row:last-child {
+  margin-bottom: 0;
+}
+.bar-row .lbl {
+  width: 96px;
+  flex: none;
+  color: var(--ink-soft);
+}
+.bar-track {
+  flex: 1;
+  height: 10px;
+  border: 1.5px solid var(--ink);
+  background: color-mix(in srgb, var(--surface) 14%, #fff);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  background: var(--surface);
+  border-radius: 999px;
+}
+
+/* --- footer / bottoni --- */
+.footbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, var(--paper) 70%, transparent);
+  padding: 18px 14px calc(14px + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+}
+.footbar-inner {
+  max-width: 440px;
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.btn {
+  flex: 1;
+  border-radius: 14px;
+  padding: 11px 16px;
+  font-weight: 800;
+  font-size: 0.94rem;
+  text-align: center;
+  border: 2px solid transparent;
+}
+.btn-primary {
+  background: var(--section, var(--surface));
+  color: #fff;
+  border-color: var(--ink);
+  box-shadow: 0 3px 0 var(--lastra);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.btn-primary:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--lastra);
+}
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 3px 0 var(--lastra);
+}
+.btn-ghost {
+  background: #fff;
+  border-color: var(--ink);
+  color: var(--ink);
+  box-shadow: 0 3px 0 var(--lastra);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.btn-ghost:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--lastra);
+}
+.btn-back {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--surface);
+  font-size: 22px;
+}
+
+/* --- competenze (chip) --- */
+.chip-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+.chip {
+  border-radius: 16px;
+  padding: 10px 12px;
+  border: 2px solid var(--ink);
+  box-shadow: 0 3px 0 var(--lastra);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 64px;
+}
+.chip .name {
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--ink);
+}
+.chip .state {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 0.6rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.chip.non-acquisita {
+  background: var(--foam);
+  box-shadow: none;
+  border-color: var(--rule);
+}
+.chip.non-acquisita .name,
+.chip.non-acquisita .state {
+  color: var(--ink-soft);
+}
+.chip.in-sviluppo {
+  background: color-mix(in srgb, var(--surface) 8%, #fff);
+}
+.chip.in-sviluppo .state {
+  color: var(--surface);
+}
+.chip.acquisita {
+  background: var(--surface);
+}
+.chip.acquisita .name,
+.chip.acquisita .state {
+  color: #fff;
+}
+.chip.consolidata {
+  background: var(--deep);
+}
+.chip.consolidata .name,
+.chip.consolidata .state {
+  color: #fff;
+}
+/* Quinto stato — riservato alle competenze 🏆 confermate da una vasca vera (non presente
+   nell'originale: la scala aveva solo quattro gradini). */
+.chip.eccellente {
+  background: var(--eccellenza);
+}
+.chip.eccellente .name,
+.chip.eccellente .state {
+  color: var(--ink);
+}
+
+.done-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: color-mix(in srgb, var(--good) 12%, #fff);
+  color: var(--good);
+  border: 2px solid var(--good);
+  border-radius: 20px;
+  padding: 7px 15px;
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 0.75rem;
+  margin-bottom: 14px;
+}
+.exam-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: color-mix(in srgb, var(--eccellenza) 14%, #fff);
+  color: var(--eccellenza);
+  border: 2px solid var(--eccellenza);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-family: var(--mono);
+  font-weight: 800;
+  font-size: 0.72rem;
+  margin-bottom: 14px;
+}
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1.5px solid var(--rule);
+  font-size: 0.86rem;
+}
+.result-row:last-child {
+  border-bottom: none;
+}
+.result-row .comp {
+  font-weight: 800;
+}
+.result-row .esito {
+  color: var(--section, var(--surface));
+  text-align: right;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.76rem;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- form di login --- */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--paper);
+}
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border: 2.5px solid var(--ink);
+  border-radius: 20px;
+  box-shadow: 0 4px 0 var(--lastra);
+  padding: 28px 24px;
+}
+.auth-field {
+  margin-bottom: 16px;
+}
+.auth-field label {
+  display: block;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+.auth-error {
+  background: var(--flag-tint);
+  color: var(--flag);
+  border: 2px solid var(--flag);
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+.auth-hint {
+  margin-top: 18px;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+/* --- Dashboard: testata, tessere, righe, tab (aggiunte in coda, DESIGN-REFERENCE.md §7) --- */
+.dash-head {
+  background: var(--surface);
+  color: rgba(255, 255, 255, 0.85);
+  border: 2.5px solid var(--ink);
+  border-radius: 22px;
+  box-shadow: 0 4px 0 var(--lastra);
+  padding: 16px 18px 18px;
+  margin: 10px 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dash-head-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dash-head .wordmark {
+  color: #fff;
+}
+.dash-head h1 {
+  font-size: 20px;
+  margin-top: 4px;
+  color: #fff;
+}
+.dash-head p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.card-evid {
+  background: color-mix(in srgb, var(--section, var(--surface)) 6%, #fff);
+}
+.evid-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+.evid-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--section, var(--surface));
+}
+.evid-title {
+  font-size: 16px;
+  font-weight: 800;
+}
+.evid-meta {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.progress {
+  width: 100%;
+  height: 8px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--section, var(--surface)) 14%, #fff);
+  overflow: hidden;
+  margin-top: 2px;
+}
+.progress > span {
+  display: block;
+  height: 100%;
+  background: var(--section, var(--surface));
+}
+
+.icon-sq {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ink);
+  flex-shrink: 0;
+}
+.icon-sq.lg {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--section, var(--surface)) 14%, #fff);
+  color: var(--section, var(--surface));
+  font-size: 22px;
+}
+.icon-sq.md {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--section, var(--surface)) 14%, #fff);
+  color: var(--section, var(--surface));
+  font-size: 21px;
+}
+.icon-sq.sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--foam);
+  color: var(--ink-soft);
+  font-size: 19px;
+}
+
+.section-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-align: center;
+  margin: 18px 0 -4px;
+}
+
+.tabs {
+  display: grid;
+  /* Colonne decise da DashboardTabs.tsx (--tab-columns) in base al numero di schede — a colonne
+     fisse, un numero di schede che non divide esattamente lascerebbe l'ultima riga a metà
+     larghezza, di nuovo disomogenea (il difetto segnalato). */
+  grid-template-columns: repeat(var(--tab-columns, 2), 1fr);
+  gap: 8px;
+  margin: 18px 0 14px;
+}
+.tab {
+  text-align: center;
+  padding: 10px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: #fff;
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--ink-soft);
+  box-shadow: 0 3px 0 var(--lastra);
+}
+.tab[aria-selected="true"] {
+  background: var(--surface);
+  color: #fff;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 2px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 0 3px 0 var(--lastra);
+  padding: 10px 12px;
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+}
+.row.tint-good {
+  background: color-mix(in srgb, var(--good) 6%, #fff);
+}
+.row-title {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.row-meta {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-top: 1px;
+}
+.row-body {
+  flex: 1;
+  min-width: 0;
+}
+.status {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 15px;
+}
+.status.done {
+  background: var(--good);
+  color: #fff;
+}
+.status.now {
+  color: var(--section, var(--surface));
+}
+.status.todo,
+.status.lock {
+  color: var(--ink-soft);
+}
+.chev {
+  color: var(--ink-soft);
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 4px;
+}
+.tile {
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  width: 100%;
+  border: 2px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 0 3px 0 var(--lastra);
+  background: color-mix(in srgb, var(--section, var(--surface)) 6%, #fff);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px 6px 8px;
+  gap: 6px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+.tile.locked {
+  background: var(--foam);
+}
+.tile.active {
+  outline: 3px solid var(--section, var(--surface));
+  outline-offset: 2px;
+}
+.tile-title {
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+.tile-meta {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-top: auto;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.tile-meta.good {
+  color: var(--good);
+}
+.tile-full {
+  grid-column: 1 / -1;
+  aspect-ratio: auto;
+  flex-direction: row;
+  text-align: left;
+  align-items: center;
+  padding: 12px 14px;
+  gap: 12px;
+}
+.tile-full .tile-title {
+  font-size: 13px;
+}
+.tile-full .tile-meta {
+  margin-top: 2px;
+}
+
+/* --- colore di sezione per capitolo (DESIGN-REFERENCE.md §5) --- */
+[data-chapter="1"] {
+  --section: var(--surface);
+}
+[data-chapter="2"] {
+  --section: var(--c-navy);
+}
+[data-chapter="3"] {
+  --section: var(--c-accent);
+}
+[data-chapter="4"] {
+  --section: var(--c-teal);
+}
+[data-chapter="5"] {
+  --section: var(--c-amber);
+}
+[data-chapter="6"] {
+  --section: var(--c-sun);
+}
+[data-chapter="7"] {
+  --section: var(--c-red);
+}
+[data-chapter="8"] {
+  --section: var(--surface);
+}
+[data-chapter="9"] {
+  --section: var(--c-navy);
+}
+[data-chapter="10"] {
+  --section: var(--c-accent);
+}
+
+/* --- Modalità ipovedente (FASE 2 voice-first/accessibility-first) ---
+   Attivata da <html data-a11y="low-vision">, preferenza per-browser salvata in un cookie
+   (src/lib/a11y/settings.ts, stesso schema del cookie di lingua). Testo più grande, contrasto
+   più alto, bersagli tattili più grandi, più respiro fra i blocchi — non tolgo i bordi/le
+   ombre a gradino: per chi vede poco sono un aiuto a distinguere un elemento dall'altro, non
+   una decorazione da togliere. Riduco solo l'animazione di comparsa. */
+[data-a11y="low-vision"] {
+  --ink-soft: var(--ink); /* niente testo secondario più chiaro: tutto al contrasto massimo */
+}
+[data-a11y="low-vision"] body {
+  font-size: 112.5%; /* 18px invece di 16px, tutto il resto in em/rem segue */
+}
+[data-a11y="low-vision"] .lede,
+[data-a11y="low-vision"] .row-meta,
+[data-a11y="low-vision"] .tile-meta,
+[data-a11y="low-vision"] .bar-row .lbl {
+  font-weight: 600; /* il muted qui sopra basta per il colore, il peso aiuta chi vede poco */
+}
+[data-a11y="low-vision"] .stage {
+  padding-left: 18px;
+  padding-right: 18px;
+}
+[data-a11y="low-vision"] .card,
+[data-a11y="low-vision"] .row,
+[data-a11y="low-vision"] .tile,
+[data-a11y="low-vision"] .opt,
+[data-a11y="low-vision"] .chip,
+[data-a11y="low-vision"] .auth-card,
+[data-a11y="low-vision"] .field {
+  border-width: 3px;
+}
+[data-a11y="low-vision"] .btn,
+[data-a11y="low-vision"] .row,
+[data-a11y="low-vision"] .tab,
+[data-a11y="low-vision"] .opt {
+  padding-top: 15px;
+  padding-bottom: 15px;
+}
+[data-a11y="low-vision"] .list {
+  gap: 12px;
+}
+[data-a11y="low-vision"] .stage,
+[data-a11y="low-vision"] .fade-in {
+  animation: none;
+}
+[data-a11y="low-vision"] :focus-visible {
+  outline-width: 4px;
+  box-shadow: 0 0 0 7px var(--ink);
+}
+[data-a11y="low-vision"] .stage:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* ============================================================================
+   BARRA LATERALE DESKTOP — src/components/desktop/ (leggi il README lì dentro)
+   Sotto 960px .desktop-sidebar è display:none e .desktop-shell-content non ha
+   nessuna regola propria: la pagina è pixel per pixel quella di sempre. Sopra
+   960px si affianca una barra fissa al contenuto, che resta centrato (.app
+   mantiene il suo max-width di sempre) nello spazio restante.
+   ============================================================================ */
+.desktop-shell {
+  display: block;
+}
+.desktop-sidebar {
+  display: none;
+}
+@media (min-width: 960px) {
+  .desktop-shell {
+    display: flex;
+    align-items: flex-start;
+    min-height: 100vh;
+  }
+  .desktop-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 260px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 20px 16px;
+    background: var(--surface);
+    color: #fff;
+    box-sizing: border-box;
+  }
+  .desktop-shell-content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+  }
+  /* .footbar è fixed rispetto alla FINESTRA, non a .desktop-shell-content — senza questo resta
+     centrato sull'intero schermo (sidebar inclusa), quindi visibilmente spostato a sinistra
+     rispetto alla card di contenuto che sta a destra della sidebar (difetto segnalato dal
+     proprietario). Stessa larghezza di .desktop-sidebar qui sopra: se cambia lì, cambia anche qui. */
+  .footbar {
+    left: 260px;
+  }
+}
+
+.desktop-sidebar-home {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: 15px;
+  color: #fff;
+  text-decoration: none;
+}
+.desktop-sidebar-heading {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 6px;
+}
+.desktop-sidebar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.desktop-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+}
+.desktop-sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.desktop-sidebar-link.active {
+  background: #fff;
+  color: var(--surface);
+}
+.desktop-sidebar-link.status-locked {
+  color: rgba(255, 255, 255, 0.4);
+  cursor: default;
+  pointer-events: none;
+}
+.desktop-sidebar-link.status-done i {
+  color: var(--good, #3aa06a);
+}
+.desktop-sidebar-link.active.status-done i {
+  color: var(--good, #3aa06a);
+}
