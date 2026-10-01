@@ -42,6 +42,18 @@ Questa distinzione è il cuore del modello:
 - Clienti → ogni card cliente ha due pulsanti affiancati: "Lezione →" e "Allenamento"
 - Calendario → la card della lezione del giorno selezionato ha gli stessi due pulsanti affiancati
 
+## 3bis. Piano personalizzato — cliente che ha già un proprio programma
+
+Alcuni clienti arrivano con un programma già pronto (scritto altrove, da un altro istruttore, da un piano precedente). Per loro **il sistema non deve costruire né calcolare nulla**: si incolla il testo del programma e si usa così com'è.
+
+- **Quando si chiede**: alla creazione di un nuovo cliente ("Nuovo cliente"), una domanda: **"Hai già un tuo programma?"**
+  - **No** → flusso normale: il piano per quel cliente viene costruito a blocchi (sequenza di blocchi come in 5.2/6), come per tutti gli altri clienti.
+  - **Sì** → campo di testo libero ("Incolla qui il tuo programma"), pulsante "Salva". Il testo viene salvato esattamente come incollato, nessun parsing/struttura.
+- **Non è una scelta per singola lezione**: è un attributo del cliente, impostato una volta alla creazione (un cambio successivo — es. passare da piano personalizzato a piano a blocchi — è un'azione di gestione cliente, fuori dallo scope di questo prototipo "a bordo vasca").
+- **Effetto su Piano (5.3)**: se il cliente ha un piano personalizzato, questa schermata mostra il testo incollato così com'è (scrollabile), invece della lista di blocchi.
+- **Effetto su Lezione live (5.2 — Main)**: se il cliente ha un piano personalizzato, Main **non genera blocchi né segmenti automatici** — non esiste una sequenza strutturata da cui calcolare `segmentoPer`, lap, serie. Main mostra il testo del programma come riferimento in alto e un cronometro semplice che l'istruttore avvia/pausa/segna manualmente guardando il testo; nessun calcolo automatico di LAP/FINE, nessun raggruppamento in serie. Tutto il resto della sezione 5.2 (motore a blocchi, lap, serie, "il migliore") si applica solo ai clienti con piano a blocchi generato dall'app.
+- **Allenamento (5.6) non cambia**: il test a tempo secco (stile+distanza, confronto record) resta identico e disponibile per **tutti** i clienti, con o senza piano personalizzato — è un concetto indipendente dal Piano/Lezione (vedi tabella sezione 3), quindi non va confuso con questa funzione.
+
 ## 4. Design system
 
 - **Palette**: sfondo `#0D1B2E`, superficie card `#15273F`, bordo `#1E3A58`, accento ciano `#4FD1E8` (azioni primarie/stato attivo), successo verde `#34D399`, attenzione arancio `#FB923C`, testo muted su 3 livelli `#9FB3C8` / `#7E92A8` / `#6B8099`, testo principale bianco `#FFFFFF`.
@@ -214,6 +226,7 @@ Per implementare questo comportamento in modo reale serve, per ogni cliente:
   - ogni test completato in Allenamento
 - **Log sessioni** (lezione completata o allenamento completato) con data, tipo (lezione/allenamento), dettaglio (blocco e tempi, oppure stile/distanza/tempo del test), per alimentare "Ultimi risultati" e le statistiche aggregate.
 - **Piano lezione** per cliente/data: sequenza di blocchi con `titolo, categoria, stile, distanza, target` (il motore di lap/serie descritto in 5.2 è generico e lavora su qualunque sequenza di blocchi con questa forma).
+- **Piano personalizzato (opzionale, per cliente — vedi 3bis)**: `pianoPersonalizzato: boolean` + `pianoTesto: string` (testo libero incollato dall'istruttore alla creazione del cliente). Quando `pianoPersonalizzato` è `true`, sostituisce completamente la sequenza di blocchi per quel cliente: Piano e Main trattano `pianoTesto` come riferimento di sola lettura, senza generare/calcolare blocchi, segmenti o serie.
 
 ## 7. Cosa NON fare (errori già corretti nel prototipo, da non reintrodurre)
 
@@ -222,3 +235,4 @@ Per implementare questo comportamento in modo reale serve, per ogni cliente:
 - Non mostrare i lap come lista piatta continua: vanno raggruppati per serie/ripetuta.
 - Non mostrare un solo stat in Progressi: tutti gli stili con record vanno mostrati insieme, in cima, senza richiedere scroll per trovarli.
 - Non confondere Allenamento (test secco, nessun lap, confronto a record) con Lezione (blocchi con lap/serie, obiettivo tecnico).
+- Non provare a "strutturare" automaticamente il testo di un piano personalizzato (3bis) in blocchi/serie: resta testo libero così com'è incollato, il motore a blocchi/lap si applica solo ai piani generati dall'app.
